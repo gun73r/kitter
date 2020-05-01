@@ -1,0 +1,17 @@
+<a href="{{ url_for('user_page', user=post.user, username=post.user.username) }}">{{ post.user.first_name ~ " " ~ post.user.last_name }}</a>
+{% if post.user == current_user or current_user|is_admin %}
+<a href="{{ url_for('edit_post', post_id=post.id) }}">Edit</a>
+<form action="{{ url_for('remove_post', post_id=post.id) }}" method="post">
+    <input type="submit" value="Remove">
+</form>
+{% endif %}
+<p>{{ post.content|urlize }}</p>
+{% if post|liked_by(current_user) %}
+    <form action="{{ url_for('unlike_post', post_id=post.id) }}" method="post">
+        <input type="submit" value="unlike">
+    </form>
+{% else %}
+    <form action="{{ url_for('like_post', post_id=post.id) }}" method="post">
+        <input type="submit" value="like">
+    </form>
+{% endif %}

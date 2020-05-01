@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+{% block header %}
+    {% block title %} login {% endblock %}
+{% endblock %}
+{% block content %}
+    <form action="{{ url_for('login') }}" method="post">
+        <label>
+            <input placeholder="Username" name="username">
+        </label>
+        <label>
+            <input placeholder="Password" name="password" type="password">
+        </label>
+        <label>
+            <input type="submit" value="Sign in">
+        </label>
+        <p>Haven't account?</p>
+    </form>
+    <a href="{{ url_for('registration') }}">Sign up</a>
+{% endblock %}
