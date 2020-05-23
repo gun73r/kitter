@@ -12,7 +12,7 @@ mod_msg = Blueprint('messages', __name__, url_prefix='/message')
 @mod_msg.route('/to/<username>', methods=['GET'])
 @login_required
 def message_to(username):
-    form = MessageForm()
+    form = MessageForm(request.form)
     user = User.get(User.username == username)
     messages = get_current_user().get_messages_with_user(user)
     return render_template('msg/chat_page.html', messages=messages, to_user=user, form=form)
@@ -21,8 +21,9 @@ def message_to(username):
 @mod_msg.route('/to/<username>/send', methods=['POST'])
 @login_required
 def send_message_to(username):
+    form = MessageForm(request.form)
     user = User.get(User.username == username)
-    if request.form.get('content') != '':
+    if form.validate():
         try:
             with DATABASE.atomic():
                 print(Message.create(from_user=get_current_user(),
