@@ -52,7 +52,7 @@ class SignUp(MethodView):
 @mod_auth.route('/logout', methods=['GET'])
 def logout():
     logout_user()
-    return redirect(url_for('login'))
+    return redirect(url_for('auth.signin'))
 
 
 mod_auth.add_url_rule('/signin', view_func=SignIn.as_view('signin'), methods=['GET', 'POST'])
