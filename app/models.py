@@ -35,11 +35,11 @@ class User(UserMixin, BaseModel):
 
     def get_followers(self):
         return User.select().join(Follow, on=Follow.from_user) \
-            .where(Follow.to_user == self)
+            .where(Follow.to_user == self).execute()
 
     def get_following(self):
         return User.select().join(Follow, on=Follow.to_user) \
-            .where(Follow.from_user == self)
+            .where(Follow.from_user == self).execute()
 
     def is_following(self, user):
         return Follow.select().where((Follow.from_user == self) & (Follow.to_user == user)).exists()
