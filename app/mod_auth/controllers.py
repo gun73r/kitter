@@ -17,6 +17,7 @@ class SignIn(MethodView):
     def post(self):
         content = request.get_json()
         user = User.get(User.username == content['username'])
+        print(content)
         if user and check_password_hash(user.password, content['password']):
             auth_user(user)
             rand_token = uuid4()
