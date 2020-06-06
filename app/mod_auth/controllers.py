@@ -4,6 +4,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from uuid import uuid4
 import json
 from playhouse.shortcuts import model_to_dict as mtd
+from peewee import *
 
 
 from app.models import *
