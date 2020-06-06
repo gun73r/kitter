@@ -23,14 +23,14 @@ class SignIn(MethodView):
                 app.token_dct[user.username] = []
             app.token_dct[user.username].append(rand_token)
             chat_rooms = Chat.select(Chat.to_user == user).execute()
-            return Response(jsonify({'message': 'Authorized',
-                                     'user': User.get_delete_put_post(user),
-                                     'chat_rooms': Chat.get_delete_put_post(chat_rooms),
-                                     'followings': Follow.get_delete_put_post(user.get_following()),
-                                     'followers': Follow.get_delete_put_post(user.get_followers()),
-                                     'token': rand_token}), status='200')
+            return Response(jsonify(message='Authorized',
+                                    user=User.get_delete_put_post(user),
+                                    chat_rooms=Chat.get_delete_put_post(chat_rooms),
+                                    followings=Follow.get_delete_put_post(user.get_following()),
+                                    followers=Follow.get_delete_put_post(user.get_followers()),
+                                    token=rand_token), status='200')
         else:
-            return Response({'message': 'Unauthorised'}, status='401')
+            return Response(jsonify({'message': 'Unauthorised'}), status='401')
 
 
 class SignUp(MethodView):
@@ -49,10 +49,10 @@ class SignUp(MethodView):
             send_verification(user.email)
             app.app.logger.info('user %s signed up successfully', user.username)
             auth_user(user)
-            return Response(jsonify({'message': 'Available'}), status='200')
+            return Response(jsonify(message='Available'), status='200')
         except IntegrityError:
             flash('User with this username already exist')
-        return Response(jsonify({'message': 'Unavailable'}), status='401')
+        return Response(jsonify(message='Unavailable'), status='401')
 
 
 @mod_auth.route('/logout', methods=['POST'])
@@ -75,6 +75,11 @@ def confirm_email(token):
         user.save()
         flash('You have verified your account. Thanks!', 'success')
     return redirect(url_for('main.feed'))
+
+
+@mod_auth.route('signin_by_token/', methods=[])
+def token_sign_in():
+    pass
 
 
 mod_auth.add_url_rule('/signin', view_func=SignIn.as_view('signin'), methods=['POST'])
