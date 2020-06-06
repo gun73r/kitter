@@ -1,5 +1,6 @@
 from functools import wraps
 from flask import redirect, url_for, session, Response
+from json import JSONEncoder
 
 from app.models import *
 
@@ -23,10 +24,12 @@ def admin_required(f):
     return wrapper
 
 
-def my_converter(inst):
-    if isinstance(inst, datetime.datetime):
-        return inst.__str__()
-
+class Encoder(JSONEncoder):
+    def default(self, o):
+        if isinstance(o, datetime.datetime):
+            return o.isoformat()
+        else:
+            return JSONEncoder.default(self, o)
 
 
 def get_current_user():

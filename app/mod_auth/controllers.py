@@ -7,7 +7,7 @@ from playhouse.shortcuts import model_to_dict as mtd
 
 
 from app.models import *
-from app.utils import auth_user, logout_user, my_converter
+from app.utils import auth_user, logout_user, Encoder
 from app.mail import *
 import app
 
@@ -27,10 +27,10 @@ class SignIn(MethodView):
             app.token_dct[user.username].append(rand_token)
             chat_rooms = Chat.select(Chat.to_user == user).execute()
             return Response(json.dumps({'message': 'Authorized',
-                                        'user': json.dumps(mtd(user), default=my_converter),
-                                        'chat_rooms': json.dumps(mtd(chat_rooms), default=my_converter),
-                                        'followings': json.dumps(mtd(user.get_following()), default=my_converter),
-                                        'followers': json.dumps(mtd(user.get_followers()), default=my_converter),
+                                        'user': json.dumps(mtd(user), cls=Encoder),
+                                        'chat_rooms': json.dumps(mtd(chat_rooms), cls=Encoder),
+                                        'followings': json.dumps(mtd(user.get_following()), cls=Encoder),
+                                        'followers': json.dumps(mtd(user.get_followers()), cls=Encoder),
                                         'token': rand_token}), status='200')
         else:
             return Response(json.dumps({'message': 'Unauthorised'}), status='401')
