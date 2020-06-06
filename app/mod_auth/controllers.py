@@ -29,7 +29,6 @@ class SignIn(MethodView):
             chat_rooms = Chat.select(Chat.to_user == user).execute()
             return Response(json.dumps({'message': 'Authorized',
                                         'user': json.dumps(mtd(user), cls=Encoder),
-                                        'chat_rooms': json.dumps(mtd(chat_rooms), cls=Encoder),
                                         'followings': json.dumps(mtd(user.get_following()), cls=Encoder),
                                         'followers': json.dumps(mtd(user.get_followers()), cls=Encoder),
                                         'token': rand_token}), status='200')
