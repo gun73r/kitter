@@ -41,6 +41,7 @@ class SignUp(MethodView):
 
     def post(self):
         content = request.get_json()
+        print(content)
         try:
             with DATABASE.atomic():
                 user = User.create(username=content.get('username'),
