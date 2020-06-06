@@ -34,12 +34,12 @@ class User(UserMixin, BaseModel):
         return Post.select().join(User).where(Post.user.id == self.id).order_by(Post.pub_date.desc())
 
     def get_followers(self):
-        return User.select().join(Follow, on=Follow.from_user) \
-            .where(Follow.to_user == self).execute()
+        return list(User.select().join(Follow, on=Follow.from_user)
+                    .where(Follow.to_user == self).execute())
 
     def get_following(self):
-        return User.select().join(Follow, on=Follow.to_user) \
-            .where(Follow.from_user == self).execute()
+        return list(t for t in User.select().join(Follow, on=Follow.to_user)
+                    .where(Follow.from_user == self).execute())
 
     def is_following(self, user):
         return Follow.select().where((Follow.from_user == self) & (Follow.to_user == user)).exists()
