@@ -23,9 +23,9 @@ def admin_required(f):
     return wrapper
 
 
-def check_user_with_token(request):
-    user_email = request.user.email
-    data = json.lo
+def my_converter(inst):
+    if isinstance(inst, datetime.datetime):
+        return inst.__str__()
 
 
 

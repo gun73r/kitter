@@ -17,7 +17,7 @@ class BaseModel(Model):
         database = DATABASE
 
 
-class User(UserMixin, BaseModel, FlaskSerializeMixin):
+class User(UserMixin, BaseModel):
     username = CharField(unique=True)
     first_name = CharField()
     last_name = CharField()
@@ -53,7 +53,7 @@ class User(UserMixin, BaseModel, FlaskSerializeMixin):
                                       | ((Message.from_user == user) & (Message.to_user == self)))
 
 
-class Post(BaseModel, FlaskSerializeMixin):
+class Post(BaseModel):
     pub_date = DateTimeField(default=datetime.datetime.now())
     user = ForeignKeyField(User, backref='posts')
     uuid = UUIDField(default=uuid.uuid4(), verbose_name='UUID')
@@ -72,30 +72,30 @@ class Post(BaseModel, FlaskSerializeMixin):
         return Like.select().where((Like.post == self) & (Like.user == user)).exists()
 
 
-class Like(BaseModel, FlaskSerializeMixin):
+class Like(BaseModel):
     user = ForeignKeyField(User, backref='likes')
     post = ForeignKeyField(Post, backref='likes')
 
 
-class Follow(BaseModel, FlaskSerializeMixin):
+class Follow(BaseModel):
     from_user = ForeignKeyField(User, backref='from')
     to_user = ForeignKeyField(User, backref='to')
     follow_date = DateTimeField(default=datetime.datetime.now())
 
 
-class Chat(BaseModel, FlaskSerializeMixin):
+class Chat(BaseModel):
     uuid = UUIDField(null=False, unique=True, verbose_name='UUID')
     to_user = ForeignKeyField(User, backref='reciever')
 
 
-class Message(BaseModel, FlaskSerializeMixin):
+class Message(BaseModel):
     pub_date = DateTimeField(default=datetime.datetime.now())
     user = ForeignKeyField(User, backref='messages')
     chat = ForeignKeyField(Chat, on_delete='CASCADE')
     content = TextField()
 
 
-class LoginDevices(BaseModel, FlaskSerializeMixin):
+class LoginDevices(BaseModel):
     token = CharField(max_length=64, unique=True)
     user = ForeignKeyField(User, backref='has_token')
 
