@@ -40,24 +40,20 @@ class SignUp(MethodView):
         return Response({'lol': 'kek'})
 
     def post(self):
-        form = SignUpForm(request.form)
-        if form.validate():
-            try:
-                with DATABASE.atomic():
-                    user = User.create(username=request.form.get('username'),
-                                       password=generate_password_hash(request.form.get('password')),
-                                       first_name=request.form.get('first_name'),
-                                       last_name=request.form.get('last_name'),
-                                       email=request.form.get('email'))
-                send_verification(user.email)
-                app.app.logger.info('user %s signed up successfully', user.username)
-                auth_user(user)
-                return Response({'message': 'Available'}, status='200')
-            except IntegrityError:
-                flash('User with this username already exist')
-        for err, it in form.errors.items():
-            flash(it)
-        return redirect(url_for('auth.signup'))
+        try:
+            with DATABASE.atomic():
+                user = User.create(username=request.form.get('username'),
+                                   password=generate_password_hash(request.form.get('password')),
+                                   first_name=request.form.get('first_name'),
+                                   last_name=request.form.get('last_name'),
+                                   email=request.form.get('email'))
+            send_verification(user.email)
+            app.app.logger.info('user %s signed up successfully', user.username)
+            auth_user(user)
+            return Response({'message': 'Available'}, status='200')
+        except IntegrityError:
+            flash('User with this username already exist')
+        return Response({'blyat': 'suka'}, status='200')
 
 
 @mod_auth.route('/logout', methods=['POST'])
