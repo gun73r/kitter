@@ -1,0 +1,5 @@
+venv/
+app.log
+.idea/
+.pytest_cache/
+.coverage

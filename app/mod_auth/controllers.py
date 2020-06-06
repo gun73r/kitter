@@ -6,12 +6,16 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from app.mod_auth.forms import *
 from app.models import User, DATABASE
 from app.utils import auth_user, logout_user
+from app.mail import *
+import app
 
 mod_auth = Blueprint('auth', __name__, url_prefix='/auth')
 
 
 class SignIn(MethodView):
     def get(self):
+        if session.get('logged_in'):
+            return redirect(url_for('main.feed'))
         form = SignInForm(request.form)
         return render_template('auth/signin.html', form=form)
 
@@ -21,6 +25,7 @@ class SignIn(MethodView):
             user = User.get(User.username == form.username.data)
             if user and check_password_hash(user.password, form.password.data):
                 auth_user(user)
+                app.app.logger.info('user %s signed in successfully', user.username)
                 return redirect(url_for('main.feed'))
             flash('Wrong username or password')
 
@@ -40,8 +45,10 @@ class SignUp(MethodView):
                                        first_name=request.form.get('first_name'),
                                        last_name=request.form.get('last_name'),
                                        email=request.form.get('email'))
+                send_verification(user.email)
+                app.app.logger.info('user %s signed up successfully', user.username)
                 auth_user(user)
-                return redirect(url_for('auth.signin'))
+                return redirect(url_for('main.feed'))
             except IntegrityError:
                 flash('User with this username already exist')
         for err, it in form.errors.items():
@@ -53,6 +60,22 @@ class SignUp(MethodView):
 def logout():
     logout_user()
     return redirect(url_for('auth.signin'))
+
+
+@mod_auth.route('/confirm/<token>')
+def confirm_email(token):
+    try:
+        email = token_to_email(token)
+    except:
+        flash('The confirmation link is invalid or has expired.', 'danger')
+    user = User.get(User.email == email)
+    if user.verified:
+        flash('Account already verified.', 'success')
+    else:
+        user.verified = True
+        user.save()
+        flash('You have verified your account. Thanks!', 'success')
+    return redirect(url_for('main.feed'))
 
 
 mod_auth.add_url_rule('/signin', view_func=SignIn.as_view('signin'), methods=['GET', 'POST'])

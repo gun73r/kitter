@@ -23,6 +23,7 @@ class User(UserMixin, BaseModel):
     password = CharField(max_length=128)
     join_date = DateTimeField(default=datetime.datetime.now)
     is_admin = BooleanField(default=False)
+    verified = BooleanField(default=False)
 
     class Meta:
         order_by = ('-joined_at',)
@@ -88,3 +89,7 @@ class Follow(BaseModel):
 
 def create_tables():
     DATABASE.create_tables([User, Post, Message, Like, Follow])
+
+
+def drop_tables():
+    DATABASE.drop_tables([User, Post, Message, Like, Follow])
