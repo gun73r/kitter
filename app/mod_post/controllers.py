@@ -33,13 +33,6 @@ def like_post(post_id):
 
 class EditPost(MethodView):
     @login_required
-    def get(self, post_id):
-        form = EditPostForm(request.form)
-        post = Post.get(Post.id == post_id)
-        form.content.data = post.content
-        return render_template('post/edit_post.html', post=post, form=form)
-
-    @login_required
     def post(self, post_id):
         form = EditPostForm(request.form)
         post = Post.get(Post.id == post_id)

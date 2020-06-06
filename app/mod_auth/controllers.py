@@ -14,25 +14,22 @@ mod_auth = Blueprint('auth', __name__, url_prefix='/auth')
 
 class SignIn(MethodView):
     def post(self):
-        form = SignInForm(request.form)
-        app.app.logger.info(form.csrf_token)
-        if form.validate():
-            user = User.get(User.username == form.username.data)
-            if user and check_password_hash(user.password, form.password.data):
-                auth_user(user)
-                rand_token = uuid4()
-                if user.username not in app.token_dct:
-                    app.token_dct[user.username] = []
-                app.token_dct[user.username].append(rand_token)
-                chat_rooms = Chat.select(Chat.to_user == user).execute()
-                return Response({'message': 'Authorized',
-                                 'user': User.get_delete_put_post(user),
-                                 'chat_rooms': Chat.get_delete_put_post(chat_rooms),
-                                 'followings': Follow.get_delete_put_post(user.get_following()),
-                                 'followers': Follow.get_delete_put_post(user.get_followers())}, status='200')
-            else:
-                return Response({'message': 'Unauthorised'}, status='401')
-        flash('Wrong username or password')
+        content = request.get_json()
+        user = User.get(User.username == content['username'])
+        if user and check_password_hash(user.password, content['password']):
+            auth_user(user)
+            rand_token = uuid4()
+            if user.username not in app.token_dct:
+                app.token_dct[user.username] = []
+            app.token_dct[user.username].append(rand_token)
+            chat_rooms = Chat.select(Chat.to_user == user).execute()
+            return Response({'message': 'Authorized',
+                             'user': User.get_delete_put_post(user),
+                             'chat_rooms': Chat.get_delete_put_post(chat_rooms),
+                             'followings': Follow.get_delete_put_post(user.get_following()),
+                             'followers': Follow.get_delete_put_post(user.get_followers())}, status='200')
+        else:
+            return Response({'message': 'Unauthorised'}, status='401')
 
 
 class SignUp(MethodView):

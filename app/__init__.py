@@ -4,6 +4,7 @@ from flask_admin.contrib.peewee import ModelView
 from flask_admin import Admin
 from flask_mail import Mail
 from flask_socketio import SocketIO
+from flask_cors import CORS
 
 from app.models import *
 from app.mod_auth.controllers import mod_auth as auth_module
@@ -39,6 +40,7 @@ def create_app():
 
 app = create_app()
 socketio = SocketIO(app)
+CORS(app)
 
 
 dictConfig({
