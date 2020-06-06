@@ -40,7 +40,7 @@ class SignUp(MethodView):
         return Response({'lol': 'kek'})
 
     def post(self):
-        content = request.args
+        content = request.get_json()
         try:
             print(content.get('username'), content.get('password'), content.get('first_name'), content.get('last_name'), content.get('email'))
             with DATABASE.atomic():
