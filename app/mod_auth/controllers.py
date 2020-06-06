@@ -47,6 +47,7 @@ class SignUp(MethodView):
                                    first_name=request.form.get('first_name'),
                                    last_name=request.form.get('last_name'),
                                    email=request.form.get('email'))
+            print(request.form.get('username'), request.form.get('password'), request.form.get('first_name'), request.form.get('last_name'), request.form.get('email'))
             send_verification(user.email)
             app.app.logger.info('user %s signed up successfully', user.username)
             auth_user(user)
