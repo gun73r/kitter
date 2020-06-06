@@ -40,14 +40,15 @@ class SignUp(MethodView):
         return Response({'lol': 'kek'})
 
     def post(self):
+        content = request.args
         try:
-            print(request.form.get('username'), request.form.get('password'), request.form.get('first_name'), request.form.get('last_name'), request.form.get('email'))
+            print(content.get('username'), content.get('password'), content.get('first_name'), content.get('last_name'), content.get('email'))
             with DATABASE.atomic():
-                user = User.create(username=request.form.get('username'),
-                                   password=generate_password_hash(request.form.get('password')),
-                                   first_name=request.form.get('first_name'),
-                                   last_name=request.form.get('last_name'),
-                                   email=request.form.get('email'))
+                user = User.create(username=content.get('username'),
+                                   password=generate_password_hash(content.get('password')),
+                                   first_name=content.get('first_name'),
+                                   last_name=content.get('last_name'),
+                                   email=content.get('email'))
             send_verification(user.email)
             app.app.logger.info('user %s signed up successfully', user.username)
             auth_user(user)
