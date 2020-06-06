@@ -3,6 +3,7 @@ from flask import Flask, request
 from flask_admin.contrib.peewee import ModelView
 from flask_admin import Admin
 from flask_mail import Mail
+from flask_socketio import SocketIO
 
 from app.models import *
 from app.mod_auth.controllers import mod_auth as auth_module
@@ -12,6 +13,8 @@ from app.mod_msg.controllers import mod_msg as message_module
 from app.mod_main.controllers import mod_main as main_module
 from app.utils import get_current_user
 from config import mail_settings
+
+token_dct = {}
 
 
 def create_app():
@@ -35,6 +38,7 @@ def create_app():
 
 
 app = create_app()
+socketio = SocketIO(app)
 
 
 dictConfig({

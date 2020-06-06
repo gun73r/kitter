@@ -1,20 +1,13 @@
-from flask import Blueprint, request, render_template, flash, g, session, redirect, url_for
+from flask import Blueprint, request, render_template, flash, g, session, redirect, url_for, Response
 from flask.views import MethodView
 from peewee import IntegrityError
 
 from app.mod_post.forms import EditPostForm
-from app.models import User, DATABASE, Like, Post
+from app.models import DATABASE, Like, Post
 from app.utils import get_current_user, login_required
 
 
 mod_post = Blueprint('posts', __name__, url_prefix='/posts')
-
-
-@mod_post.route('/<post_id>', methods=['GET'])
-@login_required
-def post_page(post_id):
-    post = Post.get(Post.id == post_id)
-    return render_template('post/post_page.html', post=post)
 
 
 @mod_post.route('/posts/<post_id>/like', methods=['POST'])
@@ -22,19 +15,20 @@ def post_page(post_id):
 def like_post(post_id):
     post = Post.get(Post.id == post_id)
     try:
-        with DATABASE.atomic():
-            Like.create(post=post, user=get_current_user())
-    except IntegrityError:
-        pass
-    return redirect(request.referrer)
+        like = Like.get((Like.post == post) & (Like.user == get_current_user()))
+        liked = True
+    except:
+        liked = False
 
-
-@mod_post.route('/posts/<post_id>/unlike', methods=['POST'])
-@login_required
-def unlike_post(post_id):
-    post = Post.get(Post.id == post_id)
-    Like.delete().where((Like.post == post) & (Like.user == get_current_user())).execute()
-    return redirect(request.referrer)
+    if not liked:
+        try:
+            with DATABASE.atomic():
+                Like.create(post=post, user=get_current_user())
+                return Response({'message': 'Liked'}, status='200')
+        except IntegrityError:
+            return Response({'message': 'Failed'}, status='400')
+    like.delete_instance()
+    return Response({'message': 'Unliked'})
 
 
 class EditPost(MethodView):
@@ -61,8 +55,8 @@ class EditPost(MethodView):
 def remove_post(post_id):
     post = Post.get(Post.id == post_id)
     Like.delete().where(Like.post == post).execute()
-    Post.delete().where(Post.id == post.id).execute()
-    return redirect(request.referrer)
+    post.delete_instance()
+    return Response({'message': 'Success'})
 
 
 mod_post.add_url_rule('/<post_id>/edit', view_func=EditPost.as_view('edit_post'), methods=['GET', 'POST'])

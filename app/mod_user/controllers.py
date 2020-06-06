@@ -1,4 +1,4 @@
-from flask import Blueprint, request, render_template, flash, g, session, redirect, url_for
+from flask import Blueprint, request, render_template, Response, redirect, url_for
 from flask.views import MethodView
 from peewee import IntegrityError
 
@@ -11,19 +11,12 @@ mod_user = Blueprint('users', __name__, url_prefix='/users')
 
 
 class UserPage(MethodView):
-    def get(self, username):
-        form = PostForm()
-        user = User.get(User.username == username)
-        if user is None:
-            return redirect(url_for('main.feed'))
-        return render_template('user/user_page.html', user=user, form=form)
-
     def post(self, username):
-        form = PostForm()
-        user = User.get(User.username == username)
-        Post.create(user=get_current_user(),
-                    content=request.form.get('content'))
-        return render_template('user/user_page.html', user=user, form=form)
+        form = PostForm(request.form)
+        post = Post.create(user=get_current_user(),
+                           content=form.get('content'))
+        return Response({'message': 'Success',
+                         'post': Post.get_delete_put_post(post)}, status='201')
 
 
 @mod_user.route('/<username>/following', methods=['GET'])
@@ -55,7 +48,7 @@ def follow(username):
             Follow.create(from_user=get_current_user(), to_user=user)
     except IntegrityError:
         pass
-    return redirect(url_for('users.user_page', username=user.username))
+    return Response({'message': 'Success'}, status='200')
 
 
 @mod_user.route('/<username>/unfollow', methods=['POST'])
@@ -69,4 +62,4 @@ def unfollow(username):
     return redirect(url_for('users.user_page', username=user.username))
 
 
-mod_user.add_url_rule('/<username>', view_func=UserPage.as_view('user_page'), methods=['GET', 'POST'])
+mod_user.add_url_rule('/<username>', view_func=UserPage.as_view('user_page'), methods=['POST'])

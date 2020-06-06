@@ -1,10 +1,10 @@
-from flask import Blueprint, request, render_template, flash, g, session, redirect, url_for
+from flask import Blueprint, request, Response, flash, session, redirect
 from flask.views import MethodView
-from peewee import IntegrityError
-
 from werkzeug.security import generate_password_hash, check_password_hash
+from uuid import uuid4
+
 from app.mod_auth.forms import *
-from app.models import User, DATABASE
+from app.models import *
 from app.utils import auth_user, logout_user
 from app.mail import *
 import app
@@ -13,28 +13,29 @@ mod_auth = Blueprint('auth', __name__, url_prefix='/auth')
 
 
 class SignIn(MethodView):
-    def get(self):
-        if session.get('logged_in'):
-            return redirect(url_for('main.feed'))
-        form = SignInForm(request.form)
-        return render_template('auth/signin.html', form=form)
-
     def post(self):
         form = SignInForm(request.form)
+        app.app.logger.info(form.csrf_token)
         if form.validate():
             user = User.get(User.username == form.username.data)
             if user and check_password_hash(user.password, form.password.data):
                 auth_user(user)
-                app.app.logger.info('user %s signed in successfully', user.username)
-                return redirect(url_for('main.feed'))
-            flash('Wrong username or password')
+                rand_token = uuid4()
+                if user.username not in app.token_dct:
+                    app.token_dct[user.username] = []
+                app.token_dct[user.username].append(rand_token)
+                chat_rooms = Chat.select(Chat.to_user == user).execute()
+                return Response({'message': 'Authorized',
+                                 'user': User.get_delete_put_post(user),
+                                 'chat_rooms': Chat.get_delete_put_post(chat_rooms),
+                                 'followings': Follow.get_delete_put_post(user.get_following()),
+                                 'followers': Follow.get_delete_put_post(user.get_followers())}, status='200')
+            else:
+                return Response({'message': 'Unauthorised'}, status='401')
+        flash('Wrong username or password')
 
 
 class SignUp(MethodView):
-    def get(self):
-        form = SignUpForm(request.form)
-        return render_template('auth/sigup.html', form=form)
-
     def post(self):
         form = SignUpForm(request.form)
         if form.validate():
@@ -48,7 +49,7 @@ class SignUp(MethodView):
                 send_verification(user.email)
                 app.app.logger.info('user %s signed up successfully', user.username)
                 auth_user(user)
-                return redirect(url_for('main.feed'))
+                return Response({'message': 'Available'}, status='200')
             except IntegrityError:
                 flash('User with this username already exist')
         for err, it in form.errors.items():
@@ -56,7 +57,7 @@ class SignUp(MethodView):
         return redirect(url_for('auth.signup'))
 
 
-@mod_auth.route('/logout', methods=['GET'])
+@mod_auth.route('/logout', methods=['POST'])
 def logout():
     logout_user()
     return redirect(url_for('auth.signin'))
@@ -78,5 +79,5 @@ def confirm_email(token):
     return redirect(url_for('main.feed'))
 
 
-mod_auth.add_url_rule('/signin', view_func=SignIn.as_view('signin'), methods=['GET', 'POST'])
-mod_auth.add_url_rule('/sigup', view_func=SignUp.as_view('signup'), methods=['GET', 'POST'])
+mod_auth.add_url_rule('/signin', view_func=SignIn.as_view('signin'), methods=['POST'])
+mod_auth.add_url_rule('/sigup', view_func=SignUp.as_view('signup'), methods=['POST'])

@@ -1,6 +1,7 @@
-from flask import Blueprint, request, render_template, flash, g, session, redirect, url_for
+from flask import Blueprint, Response, session, redirect, url_for
 
 from app.utils import login_required, get_current_user
+from app.models import Post, User
 
 mod_main = Blueprint('main', __name__)
 
@@ -12,8 +13,9 @@ def index():
     return redirect(url_for('auth.signin'))
 
 
-@mod_main.route('/feed', methods=['GET'])
+@mod_main.route('/feed', methods=['POST'])
 @login_required
 def feed():
-    user = get_current_user()
-    return render_template('feed.html', posts=user.get_feed())
+    posts = Post.get(Post.user == get_current_user().get_following())
+    return Response({'message': 'Authorized',
+                     'user_posts': Post.get_delete_put_post(posts)})

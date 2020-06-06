@@ -1,5 +1,5 @@
 from functools import wraps
-from flask import redirect, url_for, session
+from flask import redirect, url_for, session, Response
 
 from app.models import *
 
@@ -8,7 +8,7 @@ def login_required(f):
     @wraps(f)
     def wrapper(*args, **kwargs):
         if not session['logged_in']:
-            return redirect(url_for('main.index'))
+            return Response({'message': 'Unauthorised'})
         return f(*args, **kwargs)
     return wrapper
 
@@ -21,6 +21,12 @@ def admin_required(f):
         return f(*args, **kwargs)
 
     return wrapper
+
+
+def check_user_with_token(request):
+    user_email = request.user.email
+    data = json.lo
+
 
 
 def get_current_user():
