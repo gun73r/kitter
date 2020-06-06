@@ -29,6 +29,7 @@ class SignIn(MethodView):
             chat_rooms = Chat.select(Chat.to_user == user).execute()
             return Response(json.dumps({'message': 'Authorized',
                                         'username': user.username,
+                                        'email': user.email,
                                         'token': str(rand_token)}), status='200')
         else:
             return Response(json.dumps({'message': 'Unauthorised'}), status='401')
