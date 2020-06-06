@@ -18,5 +18,5 @@ mail_settings = {
     "MAIL_USE_TLS": False,
     "MAIL_USE_SSL": True,
     "MAIL_USERNAME": environ['EMAIL_USER'],
-    "MAIL_PASSWORD": environ['TourKrop1337']
+    "MAIL_PASSWORD": environ['EMAIL_PASSWORDпше']
 }
