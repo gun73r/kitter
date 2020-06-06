@@ -3,8 +3,8 @@ from flask.views import MethodView
 from werkzeug.security import generate_password_hash, check_password_hash
 from uuid import uuid4
 import json
+from playhouse.shortcuts import model_to_dict as mtd
 
-from app.mod_auth.forms import *
 from app.models import *
 from app.utils import auth_user, logout_user
 from app.mail import *
@@ -26,10 +26,10 @@ class SignIn(MethodView):
             app.token_dct[user.username].append(rand_token)
             chat_rooms = Chat.select(Chat.to_user == user).execute()
             return Response(json.dumps({'message': 'Authorized',
-                                        'user': User.get_delete_put_post(user),
-                                        'chat_rooms': Chat.get_delete_put_post(chat_rooms),
-                                        'followings': Follow.get_delete_put_post(user.get_following()),
-                                        'followers': Follow.get_delete_put_post(user.get_followers()),
+                                        'user': json.dumps(mtd(user)),
+                                        'chat_rooms': json.dumps(mtd(chat_rooms)),
+                                        'followings': json.dumps(mtd(user.get_following())),
+                                        'followers': json.dumps(mtd(user.get_followers())),
                                         'token': rand_token}), status='200')
         else:
             return Response(json.dumps({'message': 'Unauthorised'}), status='401')
