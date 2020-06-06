@@ -1,4 +1,4 @@
-from flask import Blueprint, request, Response, flash, session, redirect
+from flask import Blueprint, request, Response, flash, jsonify, redirect
 from flask.views import MethodView
 from werkzeug.security import generate_password_hash, check_password_hash
 from uuid import uuid4
@@ -23,11 +23,12 @@ class SignIn(MethodView):
                 app.token_dct[user.username] = []
             app.token_dct[user.username].append(rand_token)
             chat_rooms = Chat.select(Chat.to_user == user).execute()
-            return Response({'message': 'Authorized',
-                             'user': User.get_delete_put_post(user),
-                             'chat_rooms': Chat.get_delete_put_post(chat_rooms),
-                             'followings': Follow.get_delete_put_post(user.get_following()),
-                             'followers': Follow.get_delete_put_post(user.get_followers())}, status='200')
+            return Response(jsonify({'message': 'Authorized',
+                                     'user': User.get_delete_put_post(user),
+                                     'chat_rooms': Chat.get_delete_put_post(chat_rooms),
+                                     'followings': Follow.get_delete_put_post(user.get_following()),
+                                     'followers': Follow.get_delete_put_post(user.get_followers()),
+                                     'token': rand_token}), status='200')
         else:
             return Response({'message': 'Unauthorised'}, status='401')
 
@@ -39,7 +40,6 @@ class SignUp(MethodView):
     def post(self):
         content = request.get_json()
         try:
-            print(content.get('username'), content.get('password'), content.get('first_name'), content.get('last_name'), content.get('email'))
             with DATABASE.atomic():
                 user = User.create(username=content.get('username'),
                                    password=generate_password_hash(content.get('password')),
@@ -49,10 +49,10 @@ class SignUp(MethodView):
             send_verification(user.email)
             app.app.logger.info('user %s signed up successfully', user.username)
             auth_user(user)
-            return Response({'message': 'Available'}, status='200')
+            return Response(jsonify({'message': 'Available'}), status='200')
         except IntegrityError:
             flash('User with this username already exist')
-        return Response({'blyat': 'suka'}, status='200')
+        return Response(jsonify({'message': 'Unavailable'}), status='401')
 
 
 @mod_auth.route('/logout', methods=['POST'])
