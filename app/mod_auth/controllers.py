@@ -36,6 +36,9 @@ class SignIn(MethodView):
 
 
 class SignUp(MethodView):
+    def get(self):
+        return Response({'lol': 'kek'})
+
     def post(self):
         form = SignUpForm(request.form)
         if form.validate():
@@ -80,4 +83,4 @@ def confirm_email(token):
 
 
 mod_auth.add_url_rule('/signin', view_func=SignIn.as_view('signin'), methods=['POST'])
-mod_auth.add_url_rule('/sigup', view_func=SignUp.as_view('signup'), methods=['POST'])
+mod_auth.add_url_rule('/signup', view_func=SignUp.as_view('signup'), methods=['POST', 'GET'])
