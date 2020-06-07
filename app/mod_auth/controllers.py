@@ -1,16 +1,14 @@
+import json
+from uuid import uuid4
+
 from flask import Blueprint, request, Response, flash, redirect
 from flask.views import MethodView
 from werkzeug.security import generate_password_hash, check_password_hash
-from uuid import uuid4
-import json
-from playhouse.shortcuts import model_to_dict as mtd
-from peewee import *
 
-
-from app.models import *
-from app.utils import auth_user, logout_user, Encoder
-from app.mail import *
 import app
+from app.mail import *
+from app.models import *
+from app.utils import auth_user, user_has_token, get_username_token
 
 mod_auth = Blueprint('auth', __name__, url_prefix='/auth')
 
@@ -19,14 +17,13 @@ class SignIn(MethodView):
     def post(self):
         content = request.get_json()
         user = User.get(User.username == content['username'])
-        print(content)
         if user and check_password_hash(user.password, content['password']):
             auth_user(user)
-            rand_token = uuid4()
+            rand_token = str(uuid4())
             if user.username not in app.token_dct:
                 app.token_dct[user.username] = []
             app.token_dct[user.username].append(rand_token)
-            chat_rooms = Chat.select(Chat.to_user == user).execute()
+            # chat_rooms = Chat.select(Chat.to_user == user).execute()
             return Response(json.dumps({'message': 'Authorized',
                                         'username': user.username,
                                         'email': user.email,
@@ -36,12 +33,8 @@ class SignIn(MethodView):
 
 
 class SignUp(MethodView):
-    def get(self):
-        return Response({'lol': 'kek'})
-
     def post(self):
         content = request.get_json()
-        print(content)
         try:
             with DATABASE.atomic():
                 user = User.create(username=content.get('username'),
@@ -50,7 +43,6 @@ class SignUp(MethodView):
                                    last_name=content.get('last_name'),
                                    email=content.get('email'))
             send_verification(user.email)
-            app.app.logger.info('user %s signed up successfully', user.username)
             auth_user(user)
             return Response(json.dumps({'message': 'Available'}), status='200')
         except IntegrityError:
@@ -58,10 +50,15 @@ class SignUp(MethodView):
         return Response(json.dumps({'message': 'Unavailable'}), status='401')
 
 
-@mod_auth.route('/logout', methods=['POST'])
-def logout():
-    logout_user()
-    return redirect(url_for('auth.signin'))
+class Logout(MethodView):
+    def post(self):
+        username, token = get_username_token(request)
+        if username in app.token_dct:
+            if token in app.token_dct[username]:
+                app.token_dct[username].remove(token)
+                return Response(json.dumps({'message': 'OK'}), status='200')
+            return Response(json.dumps({'message': 'Not OK'}), status='401')
+        return Response(json.dumps({'message': 'Not OK'}), status='401')
 
 
 @mod_auth.route('/confirm/<token>')
@@ -80,10 +77,15 @@ def confirm_email(token):
     return redirect(url_for('main.feed'))
 
 
-@mod_auth.route('signin_by_token/', methods=[])
-def token_sign_in():
-    pass
+class ValidateToken(MethodView):
+    def post(self):
+        username, token = get_username_token(request)
+        if user_has_token(username, token):
+            return Response(json.dumps({'message': 'OK'}), status='200')
+        return Response(json.dumps({'message': 'Not OK'}), status='401')
 
 
 mod_auth.add_url_rule('/signin', view_func=SignIn.as_view('signin'), methods=['POST'])
-mod_auth.add_url_rule('/signup', view_func=SignUp.as_view('signup'), methods=['POST', 'GET'])
+mod_auth.add_url_rule('/signup', view_func=SignUp.as_view('signup'), methods=['POST'])
+mod_auth.add_url_rule('/validate_token', view_func=ValidateToken.as_view('validate_token'), methods=['POST'])
+mod_auth.add_url_rule('/logout', view_func=Logout.as_view('logout'), methods=['POST'])

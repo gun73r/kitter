@@ -1,7 +1,9 @@
-from flask_mail import Message
-from flask import render_template, url_for
-from itsdangerous import URLSafeTimedSerializer
 from multiprocessing import Process
+
+from flask import render_template, url_for
+from flask_mail import Message
+from itsdangerous import URLSafeTimedSerializer
+
 import app
 
 

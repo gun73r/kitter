@@ -1,9 +1,10 @@
-from flask_login import UserMixin
-from flask_serialize import FlaskSerializeMixin
-from peewee import *
 import datetime
-import config
 import uuid
+
+from flask_login import UserMixin
+from peewee import *
+
+import config
 
 DATABASE = PostgresqlDatabase(config.DATABASE_NAME,
                               user=config.DATABASE_USER,
@@ -31,50 +32,53 @@ class User(UserMixin, BaseModel):
         order_by = ('-joined_at',)
 
     def get_posts(self):
-        return Post.select().join(User).where(Post.user.id == self.id).order_by(Post.pub_date.desc())
+        return list(Post.select().join(User).where(Post.user.id == self.id).order_by(Post.pub_date.desc()).execute())
 
     def get_followers(self):
         return list(User.select().join(Follow, on=Follow.from_user)
                     .where(Follow.to_user == self).execute())
 
     def get_following(self):
-        return list(t for t in User.select().join(Follow, on=Follow.to_user)
+        return list(User.select().join(Follow, on=Follow.to_user)
                     .where(Follow.from_user == self).execute())
 
-    def is_following(self, user):
-        return Follow.select().where((Follow.from_user == self) & (Follow.to_user == user)).exists()
+    def you_follow(self, user):
+        return Follow.select().join(User, on=(Follow.to_user == user.id)).where(Follow.from_user == self.id).exists()
 
     def get_feed(self):
-        return (Post.select().where((Post.user << self.get_following()) | (Post.user == self))
-                .order_by(Post.pub_date.desc()))
+        return list(Post.select().where((Post.user << self.get_following()) | (Post.user == self))
+                    .order_by(Post.pub_date.desc()).execute())
 
     def get_messages_with_user(self, user):
         return Message.select().where(((Message.from_user == self) & (Message.to_user == user))
                                       | ((Message.from_user == user) & (Message.to_user == self)))
 
+    @classmethod
+    def search_by_username(cls, username):
+        return list(User.select().where(User.username.contains(username)).execute())
+
 
 class Post(BaseModel):
     pub_date = DateTimeField(default=datetime.datetime.now())
     user = ForeignKeyField(User, backref='posts')
-    uuid = UUIDField(default=uuid.uuid4(), verbose_name='UUID')
+    uuid = UUIDField(default=uuid.uuid4, verbose_name='UUID')
     content = TextField()
 
     class Meta:
         order_by = ('-post_time',)
 
-    def get_likes_count(self):
-        return User.select().join(Like, on=Like.user).where(Post.user == self.user).count
+    def get_likes(self):
+        return len(list(Like.select().join(Post, on=(Like.post == Post.id))
+                        .where(Like.post.id == self.id).execute()))
 
-    def get_likers(self):
-        return User.select().join(Like, on=Like.user).where(Post.user == self.user)
-
-    def liked_by(self, user: User):
-        return Like.select().where((Like.post == self) & (Like.user == user)).exists()
+    @classmethod
+    def like_exists(cls, user, post):
+        return Like.select().where((Like.user == user) & (Like.post == post)).exists()
 
 
 class Like(BaseModel):
     user = ForeignKeyField(User, backref='likes')
-    post = ForeignKeyField(Post, backref='likes')
+    post = ForeignKeyField(Post, backref='likes', on_delete='CASCADE')
 
 
 class Follow(BaseModel):

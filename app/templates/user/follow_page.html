@@ -1,9 +1,0 @@
-{% extends 'base.html' %}
-{% block header %}
-    {% block title %} {{ page_type }} {% endblock %}
-{% endblock %}
-{% block content %}
-    {% for user in user_list %}
-        <li>{% include 'includes/follow.html' %}</li>
-    {% endfor %}
-{% endblock %}
