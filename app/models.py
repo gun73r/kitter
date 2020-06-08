@@ -96,7 +96,7 @@ class Chat(BaseModel):
         lst = list(Message.select().where(Message.chat == self.id).order_by(Message.pub_date.desc()).execute())
         if len(lst) == 0:
             return None
-        return lst[-1]
+        return lst[0]
 
     def get_messages(self):
         return list(Message.select().where(Message.chat == self.id).order_by(Message.pub_date).execute())
