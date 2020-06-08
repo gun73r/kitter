@@ -74,7 +74,7 @@ def confirm_email(token):
         user.verified = True
         user.save()
         flash('You have verified your account. Thanks!', 'success')
-    return redirect(url_for('main.feed'))
+    return redirect(url_for('auth.signin'))
 
 
 class ValidateToken(MethodView):
