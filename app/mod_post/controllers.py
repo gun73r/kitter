@@ -47,7 +47,7 @@ class AddPost(MethodView):
         if user_has_token(username, token):
             content = j['content']['text']
             user = User.get(User.username == username)
-            post = Post.create(user=user,
+            Post.create(user=user,
                                content=content)
             return Response(json.dumps({'message': 'OK'}), status='200')
         return Response(json.dumps({'message': 'Not OK'}), status='401')

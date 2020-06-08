@@ -49,9 +49,8 @@ class User(UserMixin, BaseModel):
         return list(Post.select().where((Post.user << self.get_following()) | (Post.user == self))
                     .order_by(Post.pub_date.desc()).execute())
 
-    def get_messages_with_user(self, user):
-        return Message.select().where(((Message.from_user == self) & (Message.to_user == user))
-                                      | ((Message.from_user == user) & (Message.to_user == self)))
+    def get_chats_with_user(self):
+        return list(Chat.select().where((Chat.to_user == self.id) | (Chat.from_user == self.id)).execute())
 
     @classmethod
     def search_by_username(cls, username):
@@ -78,7 +77,7 @@ class Post(BaseModel):
 
 class Like(BaseModel):
     user = ForeignKeyField(User, backref='likes')
-    post = ForeignKeyField(Post, backref='likes', on_delete='CASCADE')
+    post = ForeignKeyField(Post, backref='likes')
 
 
 class Follow(BaseModel):
@@ -88,25 +87,46 @@ class Follow(BaseModel):
 
 
 class Chat(BaseModel):
-    uuid = UUIDField(null=False, unique=True, verbose_name='UUID')
-    to_user = ForeignKeyField(User, backref='reciever')
+    uuid = UUIDField(null=False, unique=True, default=uuid.uuid4, verbose_name='UUID')
+    from_user = ForeignKeyField(User, backref='sender')
+    to_user = ForeignKeyField(User, backref='receiver')
+    last_interaction = DateTimeField(default=datetime.datetime.now())
+
+    def get_last_message(self):
+        lst = list(Message.select().where(Message.chat == self.id).order_by(Message.pub_date.desc()).execute())
+        if len(lst) == 0:
+            return None
+        return lst[0]
+
+    def get_messages(self):
+        return list(Message.select().where(Message.chat == self.id).order_by(Message.pub_date).execute())
+
+    @classmethod
+    def exists(cls, sender, receiver):
+        return Chat.select().where(((Chat.from_user == sender) & (Chat.to_user == receiver))
+                                   | ((Chat.to_user == sender) & (Chat.from_user == receiver))).exists()
+
+    @classmethod
+    def get_chats_with_user(cls, user):
+        return list(Chat.select().where((Chat.to_user == user) | (Chat.from_user == user))
+                    .order_by(Chat.last_interaction.desc()).execute())
+
+    @classmethod
+    def get_room(cls, sender, receiver):
+        return Chat.get(((Chat.from_user == sender) & (Chat.to_user == receiver))
+                        | ((Chat.to_user == sender) & (Chat.from_user == receiver)))
 
 
 class Message(BaseModel):
     pub_date = DateTimeField(default=datetime.datetime.now())
     user = ForeignKeyField(User, backref='messages')
-    chat = ForeignKeyField(Chat, on_delete='CASCADE')
+    chat = ForeignKeyField(Chat)
     content = TextField()
 
 
-class LoginDevices(BaseModel):
-    token = CharField(max_length=64, unique=True)
-    user = ForeignKeyField(User, backref='has_token')
-
-
 def create_tables():
-    DATABASE.create_tables([User, Post, Message, Like, Follow, Chat, LoginDevices])
+    DATABASE.create_tables([User, Post, Message, Like, Follow, Chat])
 
 
 def drop_tables():
-    DATABASE.drop_tables([User, Post, Message, Like, Follow, Chat, LoginDevices])
+    DATABASE.drop_tables([User, Post, Message, Like, Follow, Chat])
