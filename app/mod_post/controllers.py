@@ -1,5 +1,6 @@
 import json
 
+import uuid
 from flask import Blueprint, request, Response
 from flask.views import MethodView
 from playhouse.shortcuts import model_to_dict as mtd
@@ -36,6 +37,9 @@ class RemovePost(MethodView):
                 post = Post.get(Post.uuid == content['uuid'])
             except:
                 return Response(json.dumps({'message': 'Not Exist'}), status='404')
+            likes = list(Like.select().where(Like.post == post))
+            for l in likes:
+                l.delete_instance()
             post.delete_instance()
             return Response(json.dumps({'message': 'OK'}), status='200')
         return Response(json.dumps({'message': 'Not OK'}), status='401')
